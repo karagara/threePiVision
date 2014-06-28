@@ -1,0 +1,11 @@
+To import the project using eclipse alone:
+File>Import
+Select git>projects from git
+Select clone url
+
+enter the url:
+https://github.com/karagara/threePiVision.git
+and your github credentials, and hit next
+
+make sure master is selected, hit next
+choose the directory to save your code in, inital branchm is master and remote name is origin
