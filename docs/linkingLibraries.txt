@@ -1,0 +1,8 @@
+In Properties>C/C++ Build>Settings>Tool Settings>GCC C++ Compiler>Includes
+add "D:\opencv246\build\include" to the include path
+
+In Properties>C/C++ Build>Settings>Tool Settings>MinGW C++ linker>libraries
+add "D:\opencvMinGW\lib" to the Libarary search path
+
+In Properties>C/C++ Build>Settings>Tool Settings>MinGW C++ linker>libraries
+add "opencv_core246", "opencv_imgproc246", "opencv_highgui246"
