@@ -5,10 +5,10 @@
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.mingw.base.1611787863" moduleId="org.eclipse.cdt.core.settings" name="Default">
 				<externalSettings/>
 				<extensions>
+					<extension id="org.eclipse.cdt.core.PE" point="org.eclipse.cdt.core.BinaryParser"/>
 					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.PE" point="org.eclipse.cdt.core.BinaryParser"/>
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
@@ -22,8 +22,8 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.mingw.base.1408517083" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.mingw.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.base.1001926163" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.mingw.base">
-								<option id="gnu.cpp.compiler.option.include.paths.1749924831" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;D:\opencv246\build\include&quot;"/>
+								<option id="gnu.cpp.compiler.option.include.paths.1749924831" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;C:\opencv249\opencv\build\include&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1736962182" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -32,13 +32,21 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.mingw.base.1887195007" name="MinGW C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.mingw.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.mingw.base.325819836" name="MinGW C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.mingw.base">
-								<option id="gnu.cpp.link.option.paths.869717868" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;D:\opencvMinGW\lib&quot;"/>
+								<option id="gnu.cpp.link.option.paths.869717868" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;C:\opencv249\opencv\mingw\lib&quot;"/>
 								</option>
-								<option id="gnu.cpp.link.option.libs.1745610610" superClass="gnu.cpp.link.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" value="opencv_core246"/>
-									<listOptionValue builtIn="false" value="opencv_imgproc246"/>
-									<listOptionValue builtIn="false" value="opencv_highgui246"/>
+								<option id="gnu.cpp.link.option.libs.1745610610" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="opencv_calib3d249"/>
+									<listOptionValue builtIn="false" value="opencv_contrib249"/>
+									<listOptionValue builtIn="false" value="opencv_core249"/>
+									<listOptionValue builtIn="false" value="opencv_features2d249"/>
+									<listOptionValue builtIn="false" value="opencv_haartraining_engine"/>
+									<listOptionValue builtIn="false" value="opencv_highgui249"/>
+									<listOptionValue builtIn="false" value="opencv_imgproc249"/>
+									<listOptionValue builtIn="false" value="opencv_ml249"/>
+									<listOptionValue builtIn="false" value="opencv_objdetect249"/>
+									<listOptionValue builtIn="false" value="opencv_video249"/>
+									<listOptionValue builtIn="false" value="opencv_videostab249"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1334007620" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -71,5 +79,10 @@
 		<project id="threePiVision.null.1558001397" name="threePiVision"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Default">
+			<resource resourceType="PROJECT" workspacePath="/threePiVision"/>
+		</configuration>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>

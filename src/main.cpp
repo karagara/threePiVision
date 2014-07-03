@@ -49,4 +49,4 @@ int DELAY_BLUR = 100;
 //		if (waitKey(30) >= 0) break;
 //	}
 //	return 0;
-}
+//}
