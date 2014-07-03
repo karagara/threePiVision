@@ -26,27 +26,27 @@ using namespace std;
 
 int MAX_KERNEL_LENGTH = 5;
 int DELAY_BLUR = 100;
-
-int main() {
-	VideoCapture stream1(0);   //0 is the id of video device.0 if you have only one camera.
-
-	if (!stream1.isOpened()) { //check if video device has been initialised
-		cout << "cannot open camera";
-	}
-
-	//unconditional loop
-	while (true) {
-		//get image from stream
-		Mat cameraFrame;
-		Mat blurFrame;
-		stream1.read(cameraFrame);
-
-		//do a basic blur
-	    medianBlur ( cameraFrame, blurFrame, MAX_KERNEL_LENGTH );
-
-		//show image
-		imshow("cam", blurFrame);
-		if (waitKey(30) >= 0) break;
-	}
-	return 0;
+//
+//int main() {
+//	VideoCapture stream1(0);   //0 is the id of video device.0 if you have only one camera.
+//
+//	if (!stream1.isOpened()) { //check if video device has been initialised
+//		cout << "cannot open camera";
+//	}
+//
+//	//unconditional loop
+//	while (true) {
+//		//get image from stream
+//		Mat cameraFrame;
+//		Mat blurFrame;
+//		stream1.read(cameraFrame);
+//
+//		//do a basic blur
+//	    medianBlur ( cameraFrame, blurFrame, MAX_KERNEL_LENGTH );
+//
+//		//show image
+//		imshow("cam", blurFrame);
+//		if (waitKey(30) >= 0) break;
+//	}
+//	return 0;
 }
