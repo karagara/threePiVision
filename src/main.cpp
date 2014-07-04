@@ -11,8 +11,12 @@
 #include "logic.h"
 
 int main() {
+	//setup modules
 	vision* v_module = new vision();
 	controller* c_module = new controller();
-	logic* l_module = new logic();
+	logic* l_module = new logic(c_module, v_module);
+
+	//run logic
+	l_module->runLogic();
 
 }

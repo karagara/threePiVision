@@ -9,14 +9,18 @@
 #define VISION_H_
 
 #include "visionInterface.h"
-#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/imgproc/imgproc.hpp>
 
 class vision : public visionInterface {
 public:
+	//constructors
 	vision();
 	virtual ~vision();
 
 	cv::Mat getFrame();
+
+private:
+	cv::VideoCapture* vCapture;
 };
 
 #endif /* VISION_H_ */

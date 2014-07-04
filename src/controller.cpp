@@ -17,5 +17,6 @@ controller::~controller() {
 }
 
 void controller::moveWheels(int lWheel, int rWheel){
-
+	//convert to an agreed message type
+	//send through rPi serial port to 3pi
 }

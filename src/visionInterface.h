@@ -8,13 +8,11 @@
 #ifndef VISIONINTERFACE_H_
 #define VISIONINTERFACE_H_
 
+#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
 class visionInterface{
 	public:
-		visionInterface();
-		virtual ~visionInterface();
-
 		virtual cv::Mat getFrame()=0;
 };
 

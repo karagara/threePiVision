@@ -8,8 +8,7 @@
 #include "vision.h"
 
 vision::vision() {
-	// TODO Auto-generated constructor stub
-
+	this->vCapture = new cv::VideoCapture(0);
 }
 
 vision::~vision() {
@@ -17,6 +16,7 @@ vision::~vision() {
 }
 
 cv::Mat vision::getFrame(){
-	cv::Mat matrix;
-	return matrix;
+	cv::Mat img;
+	vCapture->read(img);
+	return img;
 }

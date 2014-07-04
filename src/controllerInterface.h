@@ -10,9 +10,6 @@
 
 class controllerInterface {
 public:
-		controllerInterface();
-		virtual ~controllerInterface();
-
 		virtual void moveWheels(int, int)=0;
 };
 
