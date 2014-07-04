@@ -16,3 +16,7 @@ vision::~vision() {
 	// TODO Auto-generated destructor stub
 }
 
+cv::Mat vision::getFrame(){
+	cv::Mat matrix;
+	return matrix;
+}

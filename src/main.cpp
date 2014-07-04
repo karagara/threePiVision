@@ -6,6 +6,9 @@
  */
 
 #include <iostream>
+#include "vision.h"
+#include "controller.h"
+#include "logic.h"
 
 int main() {
 	vision* v_module = new vision();

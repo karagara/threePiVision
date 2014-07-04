@@ -16,3 +16,6 @@ controller::~controller() {
 	// TODO Auto-generated destructor stub
 }
 
+void controller::moveWheels(int lWheel, int rWheel){
+
+}

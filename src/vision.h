@@ -8,10 +8,15 @@
 #ifndef VISION_H_
 #define VISION_H_
 
-class vision {
+#include "visionInterface.h"
+#include <opencv2/imgproc/imgproc.hpp>
+
+class vision : public visionInterface {
 public:
 	vision();
 	virtual ~vision();
+
+	cv::Mat getFrame();
 };
 
 #endif /* VISION_H_ */
