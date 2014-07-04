@@ -50,10 +50,12 @@ void createHSVApp() {
 }
 
 void morphoProcessing(Mat &filterImage) {
-	Mat strel1 = cv::getStructuringElement(cv::MORPH_RECT, Size(8, 8));
-	Mat strel2 = cv::getStructuringElement(cv::MORPH_RECT, Size(8, 8));
+	Mat strel1 = cv::getStructuringElement(cv::MORPH_RECT, Size(3, 3));
+	Mat strel2 = cv::getStructuringElement(cv::MORPH_RECT, Size(3, 3));
 	cv::erode(filterImage, filterImage, strel1);
+	cv::morphologyEx(filterImage, filterImage, MORPH_OPEN, strel1);
 	cv::dilate(filterImage, filterImage, strel2);
+	cv::morphologyEx(filterImage, filterImage, MORPH_CLOSE, strel2);
 }
 
 String toString(int num) {
@@ -64,35 +66,47 @@ String toString(int num) {
 	return s;
 }
 
-void trackObjects(Mat src, Mat &dest, int &x, int &y) {
+void trackObjects(Mat cameraOrig, Mat src, Mat &dest, int &x, int &y) {
 	Mat colorArea;
-	bool ObjectFound = false;
-	src.copyTo(colorArea);
-	vector<vector<Point> > contours;
-	vector<Vec4i> hierarchy;
+	//Mat skinArea;
+	//bool ObjectFound = false;
+	//src.copyTo(skinArea);
+	cameraOrig.copyTo(dest, src); //when find the skin, change to the skin area
+	vector<vector<Point> > contours; //find the boundary of the object
+	vector<Vec4i> hierarchy; //find the info of the boundary
+	vector<Point> convexHu; //find the convex hull point bag
+	vector<vector<Point> > filterContours;
 	//find the Contours
-	cv::findContours(colorArea, contours, hierarchy, CV_RETR_CCOMP,
+//	cv::findContours(colorArea, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+
+	findContours(src, contours, hierarchy, CV_RETR_EXTERNAL,
 			CV_CHAIN_APPROX_SIMPLE);
 
-	//find the maximum object boundary
-	int index = 0;
-	double area = 0, maxArea(0);
-	for (int i = 0; i < contours.size(); i++) {
-		area = cv::contourArea(Mat(contours[i]));
-		if (area > maxArea) {
-			maxArea = area;
-			index = i;
-		}
-	}
 
-	Moments moment = moments(colorArea, true);
-	x = moment.m10 / moment.m00;
-	y = moment.m01 / moment.m00;
-	if (x > 0 && y > 0 && area > 10 * 10) {
-		drawContours(dest, contours, index, Scalar(0,0, 255), 2, 8, hierarchy);
-		cv::circle(dest, Point(x, y), 20, Scalar(255, 0, 0), 3);
-		cv::putText(dest, toString(x) + "," + toString(y) + "Object Found", Point(x - 35, y + 35), 1, 1, Scalar(255, 0, 0), 2);
-	}
+	drawContours(dest, contours, -1, Scalar(0, 0, 255), 3, 8, hierarchy);
+
+
+	//find the maximum object boundary
+//	int index = 0;
+//	double area = 0, maxArea(0);
+//	for (int i = 0; i < contours.size(); i++) {
+//		area = cv::contourArea(Mat(contours[i]));
+//		if (area > maxArea) {
+//			maxArea = area;
+//			index = i;
+//		}
+//	}
+//
+//	Moments moment = moments(colorArea, true);
+//	x = moment.m10 / moment.m00;
+//	y = moment.m01 / moment.m00;
+//	if (x > 0 && y > 0 && area > 10 * 10) {
+//		//drawContours(dest, contours, index, Scalar(0,0, 255), 2, 8, hierarchy);
+//		drawContours(dest, contours, -1, Scalar(0, 0, 255), 3, 8, hierarchy);
+//		cv::circle(dest, Point(x, y), 20, Scalar(255, 0, 0), 3);
+//		cv::putText(dest, toString(x) + "," + toString(y) + "Object Found",
+//				Point(x - 35, y + 35), 1, 1, Scalar(255, 0, 0), 2);
+//	}
 }
 
 int main(int argc, char* argv[]) {
@@ -101,11 +115,15 @@ int main(int argc, char* argv[]) {
 	Mat cameraGray;
 	Mat cameraHSV;
 	Mat cameraThreshold;
+	Mat cameraMask(cameraOrig.rows, cameraOrig.cols, CV_8UC1); //\
+	//the HSV tracker can be enabled here
+    bool trackHSVEnable = false;
 	int x = 0;
 	int y = 0;
 
 	//useful for detecting the object's HSV
-	createHSVApp();
+	if(trackHSVEnable)
+	   createHSVApp();
 
 	VideoCapture vcapture;
 	//default the capture frame size to the certain size
@@ -115,21 +133,41 @@ int main(int argc, char* argv[]) {
 
 	while (1) {
 		vcapture.read(cameraOrig);
-		cv::GaussianBlur(cameraOrig, cameraOrig, Size(3, 3), 0);
-		cv::cvtColor(cameraOrig, cameraHSV, cv::COLOR_RGB2HSV);
+
+		//get the boundary of the object(hand/color object)
+		Mat temp1(cameraOrig.rows, cameraOrig.cols, CV_8UC1);
+		Mat temp2(cameraOrig.rows, cameraOrig.cols, CV_8UC1);
+
+		//remove the salt and pepper noise
+		cv::medianBlur(cameraOrig, cameraOrig, 5);
+		//cv::GaussianBlur(cameraOrig, cameraOrig, Size(3, 3), 0);
+
+		//change the color to HSV space
+		cv::cvtColor(cameraOrig, cameraHSV, cv::COLOR_BGR2HSV);
+
+		//below two lines are the hand HSV range
+		cv::inRange(cameraHSV, Scalar(0, 30, 30), Scalar(40, 170, 256), temp1);
+		cv::inRange(cameraHSV, Scalar(156, 30, 30), Scalar(180, 170, 256),
+				temp2);
+		cv::bitwise_or(temp1, temp2, cameraThreshold);
+
 		//This is the example of the "Pink Sticker" HSV value
 		//cv::inRange(cameraHSV,Scalar(68, 68, 163), Scalar(237,209,256),cameraThreshold);
+
 		//This can be adjusted during the application run
-		cv::inRange(cameraHSV, Scalar(Hue_Min, Sat_Min, Val_Min), Scalar(Hue_Max, Sat_Max, Val_Max), cameraThreshold);
-		//using the Morphological Image processing to process the image
+		//cv::inRange(cameraHSV, Scalar(Hue_Min, Sat_Min, Val_Min), Scalar(Hue_Max, Sat_Max, Val_Max), cameraThreshold);
+
+		//using the Morphological Image processing to process the image, remove noise
 		morphoProcessing(cameraThreshold);
-		trackObjects(cameraThreshold, cameraOrig, x, y);
+
+		trackObjects(cameraOrig, cameraThreshold, cameraOrig, x, y);
+
 		//show the different kinds of frames
 		cv::imshow("Camera Original", cameraOrig);
 		cv::imshow("Camera HSV Module", cameraHSV);
 		cv::imshow("Camera Threshold Module", cameraThreshold);
+
 		waitKey(10);
 	}
-
 	return 0;
 }
