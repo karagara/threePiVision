@@ -23,6 +23,7 @@ void getSkin(Mat const &src, Mat &dest);
 void getContours(Mat const &closedFrame, Mat const &bwFrame, Mat &contourFrame, vector<vector<Point> > &contours);
 void filterSmallContours(vector<vector<Point> > const &contours, vector<vector<Point> > &largeContours, int maxArea);
 void takeDerivative(vector<int> const &samples, vector<int> &dsamples, int &fingerCount);
+void getSamples(Mat const &closedFrame, vector<int> &samples, int sampleDistance, int com_x, int com_y);
 
 int main() {
 	VideoCapture stream1;
