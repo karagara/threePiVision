@@ -19,4 +19,8 @@ int main() {
 	//run logic
 	l_module->runLogic();
 
+	delete v_module;
+	delete c_module;
+	delete l_module;
+	return 0;
 }

@@ -20,7 +20,7 @@ const int Frame_Height = 480;
 
 bool R1(int R, int G, int B);
 void getSkin(Mat const &src, Mat &dest);
-void getContours(Mat const &closedFrame, Mat const &bwFrame, Mat &contourFrame, vector<vector<Point> > &contours);
+void getContours(Mat const &bwFrame, Mat &contourFrame, vector<vector<Point> > &contours);
 void filterSmallContours(vector<vector<Point> > const &contours, vector<vector<Point> > &largeContours, int maxArea);
 void takeDerivative(vector<int> const &samples, vector<int> &dsamples, int &fingerCount);
 void getSamples(Mat const &closedFrame, vector<int> &samples, int sampleDistance, int com_x, int com_y);
@@ -58,7 +58,7 @@ int main() {
 		//find contours
 		cv::cvtColor(closedFrame, bwFrame, CV_RGB2GRAY);
 		contourFrame=cameraFrame.clone();
-		getContours(closedFrame, bwFrame, contourFrame, contours);
+		getContours(bwFrame, contourFrame, contours);
 
 		//filter out small contours
 		filterSmallContours(contours, largeContours, 2000);
@@ -144,7 +144,7 @@ void takeDerivative(vector<int> const &samples, vector<int> &dsamples, int &fing
 }
 
 
-void getContours(Mat const &closedFrame, Mat const &bwFrame, Mat &contourFrame, vector<vector<Point> > &contours ){
+void getContours( Mat const &bwFrame, Mat &contourFrame, vector<vector<Point> > &contours ){
 	vector<Vec4i> hierarchy;
 	cv::findContours(bwFrame,contours,hierarchy,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
 	cv::drawContours(contourFrame,contours,-1,Scalar(0, 0, 255), 3, 8, hierarchy);
