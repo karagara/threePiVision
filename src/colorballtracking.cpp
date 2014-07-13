@@ -15,6 +15,8 @@ using namespace std;
 const int Frame_Width = 640;
 const int Frame_Height = 480;
 void filterSmallContours(vector<vector<Point> > const &contours, vector<vector<Point> > &largeContours, int maxArea);
+void morphoProcessing(Mat &filterImage);
+
 string integerToString(int num);
 void trackObject(Mat src, Mat &dest){
 	Rect boundRect;
@@ -37,7 +39,7 @@ void trackObject(Mat src, Mat &dest){
     }
 	//draw the boundary of the object
 	drawContours(dest, contours, largestObj, Scalar(0, 0, 255), 3, 8, hierarchy);
-
+    //put the BoundingBox in the contour region
 	rectangle( dest, boundRect, Scalar(0, 0, 255), 2, 8, 0 );
     Moments moment = moments(src,true);
     int centerX = moment.m10 / moment.m00;
@@ -53,6 +55,15 @@ string integerToString( int num ){
 	strings << num;
 	string s = strings.str();
 	return s;
+}
+
+void morphoProcessing(Mat &filterImage) {
+	Mat strel1 = cv::getStructuringElement(cv::MORPH_RECT, Size(3, 3));
+	Mat strel2 = cv::getStructuringElement(cv::MORPH_RECT, Size(3, 3));
+	cv::erode(filterImage, filterImage, strel1);
+	cv::morphologyEx(filterImage, filterImage, MORPH_OPEN, strel1);
+	cv::dilate(filterImage, filterImage, strel2);
+	cv::morphologyEx(filterImage, filterImage, MORPH_CLOSE, strel2);
 }
 
 void filterSmallContours(vector<vector<Point> > const &contours, vector<vector<Point> > &largeContours, int maxArea){
@@ -94,6 +105,8 @@ int main(){
 		cv::bitwise_or(threshold1,threshold2,thresholdFrame);
 
 		//blur image to remove basic imperfections
+		//morphoProcessing(thresholdFrame);
+		//GaussianBlur(thresholdFrame,thresholdFrame,Size(7,7),0,0);
 		medianBlur(thresholdFrame, thresholdFrame, 7);
 
 		//Closing operation
@@ -102,9 +115,17 @@ int main(){
 	    //find the boundary of the object
 		trackObject(closedFrame, cameraFrame);
 
+		//setup output
+		namedWindow("closed");
+		namedWindow("cameraFrame");
+		namedWindow("hsvFrame");
+		namedWindow("thresholdFrame");
 
-		//show image
-		imshow("ColorBallTracking", cameraFrame);
+		//show frame
+		imshow("closed", closedFrame);
+		imshow("cameraFrame", cameraFrame);
+		imshow("hsvFrame", hsvFrame);
+		imshow("thresholdFrame", thresholdFrame);
 
 		if (waitKey(10) >= 0) break;
 	}
