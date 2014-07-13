@@ -14,12 +14,16 @@ using namespace std;
 
 const int Frame_Width = 640;
 const int Frame_Height = 480;
+const int MAX_OBJECTS = 5;
 void filterSmallContours(vector<vector<Point> > const &contours,
 		vector<vector<Point> > &largeContours, int maxArea);
-void morphoProcessing(Mat &filterImage);
+
 
 string integerToString(int num);
 void trackObject(Mat src, Mat &dest) {
+	int numObjects = 0;
+	//determine if the color object found or not
+	bool found = false;
 	Rect boundRect;
 	int largestObj = 0;
 	vector<vector<Point> > contoursSet;
@@ -29,7 +33,7 @@ void trackObject(Mat src, Mat &dest) {
 	double maxArea = 0;
 	findContours(src, contours, hierarchy, CV_RETR_EXTERNAL,
 			CV_CHAIN_APPROX_SIMPLE);
-	filterSmallContours(contoursSet, contours, 2000);
+	numObjects = hierarchy.size();
 	for (unsigned int i = 0; i < contours.size(); i++) {
 		Mat tempContour = Mat(contours[i]);
 		area = contourArea(tempContour);
@@ -37,15 +41,19 @@ void trackObject(Mat src, Mat &dest) {
 			maxArea = area;
 			largestObj = i;
 			boundRect = boundingRect(contours[largestObj]);
+			found = true;
 		}
 	}
-	Moments moment = moments(src, true);
-	int centerX = moment.m10 / moment.m00;
-	int centerY = moment.m01 / moment.m00;
-	Point centerPoint(centerX, centerY);
-	Point printPoint(centerX, centerY - 10);
+	//filter the small contours
+	filterSmallContours(contoursSet, contours, maxArea);
+
 	//draw the boundary of the object
-	if (maxArea > 2000) {
+	if (found && numObjects <= MAX_OBJECTS ) {
+		Moments moment = moments(Mat(contours[largestObj]), true);
+		int centerX = moment.m10 / moment.m00;
+		int centerY = moment.m01 / moment.m00;
+		Point centerPoint(centerX, centerY);
+		Point printPoint(centerX, centerY - 10);
 		drawContours(dest, contours, largestObj, Scalar(0, 0, 255), 3, 8,
 				hierarchy);
 		circle(dest, centerPoint, 8, Scalar(255, 0, 0), CV_FILLED);
