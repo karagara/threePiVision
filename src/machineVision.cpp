@@ -97,7 +97,7 @@
 //
 //
 //	    //setup outputs
-//	    namedWindow("closed");
+//	    namdedWindow("closed");
 //	    namedWindow("contours");
 //
 //		//show image
