@@ -17,28 +17,20 @@ const int FRAME_HEIGHT = 480;
 #define PI 3.14159265
 
 //declare the functions
-void filterSmallContours(vector<vector<Point> > const &contours,
-		vector<vector<Point> > &largeContours, int maxArea);
+//void filterSmallContours(vector<vector<Point> > const &contours, vector<vector<Point> > &largeContours, int maxArea);
 void morphologicalImgProc(Mat &frame);
 string integerToString(int num);
-float angleBetween(const Point &v1, const Point &v2);
+int angleToCenter(const Point &v1, const Point &v2);
+void doAction(int totalAngleOfFinger, int fingerSize);
+
 
 //calculate the angle between two points
-//need to be renamed variables!!!!!!
-float angleBetween(const Point &v1, const Point &v2) {
-	float len1 = sqrt(v1.x * v1.x + v1.y * v1.y);
-	float len2 = sqrt(v2.x * v2.x + v2.y * v2.y);
-
-	float dot = v1.x * v2.x + v1.y * v2.y;
-
-	float a = dot / (len1 * len2);
-
-	if (a >= 1.0)
-		return 0.0;
-	else if (a <= -1.0)
-		return PI;
-	else
-		return acos(a); // 0..PI
+int angleToCenter(const Point &finger, const Point &center) {
+	float y_angle = center.y - finger.y; //center = 1;
+	float x_angle = finger.x - center.x;// tip =2;
+	float theta = atan(y_angle/ x_angle);
+	int angleFinger = (int) round( theta * 180 / PI);
+	return angleFinger;
 }
 
 //the function that convert the integer to string
@@ -51,16 +43,16 @@ string integerToString(int num) {
 }
 
 //filter the small object that appears in the frame for certain area
-void filterSmallContours(vector<vector<Point> > const &contours,
-		vector<vector<Point> > &largeContours, int maxArea) {
-	int size = contours.size();
-	for (int i = 0; i < size; i++) {
-		//if there is a large contour, add it to the vector of large contours
-		if (cv::contourArea(contours[i]) > maxArea) {
-			largeContours.push_back(contours[i]);
-		}
-	}
-}
+//void filterSmallContours(vector<vector<Point> > const &contours,
+//		vector<vector<Point> > &largeContours, int maxArea) {
+//	int size = contours.size();
+//	for (int i = 0; i < size; i++) {
+//		//if there is a large contour, add it to the vector of large contours
+//		if (cv::contourArea(contours[i]) > maxArea) {
+//			largeContours.push_back(contours[i]);
+//		}
+//	}
+//}
 
 void morphologicalImgProc(Mat &frame) {
 	Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, Size(9, 9), Point(5, 5));
@@ -80,8 +72,8 @@ void trackHand(Mat src, Mat &dest) {
 	vector<vector<Point> > contoursSet(contours.size());//store large contours
 	vector<Vec4i> hierarchy;
 	vector<Point> convexHullPoint;
+
 	vector<Point> fingerPoint;
-	vector<int> convexPoint;
 	Point centerP;
 	int numObjects = 0;
 	bool flag = false;
@@ -90,7 +82,10 @@ void trackHand(Mat src, Mat &dest) {
 	bool handFound = false;
 
 	findContours(src, contours, hierarchy, CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
-	//findContours(src, contours, hierarchy, CV_RETR_TREE, CV_CLOCKWISE,Point(0, 0));
+	vector<vector<int> > hull( contours.size());
+	vector<vector<Vec4i> > defects ( contours.size());
+	vector<vector<Point> > defectPoint( contours.size());
+
 	numObjects = hierarchy.size();
 	for (unsigned int i = 0; i < contours.size(); i++) {
 		Mat tempContour = Mat(contours[i]);
@@ -101,6 +96,7 @@ void trackHand(Mat src, Mat &dest) {
 			handFound = true;
 		}
 	}
+	if( maxArea > 5000){
 	boundRect = boundingRect(contours[largestObj]);
 	//filterSmallContours(contours, contoursSet, maxArea);
 
@@ -110,16 +106,22 @@ void trackHand(Mat src, Mat &dest) {
 
 	convexHull(contours[largestObj], convexHullPoint, true, true);
 	//approxPolyDP( Mat(contoursSet[largestObj]), contoursSet[largestObj], 3, true );
+	convexHull(contours[largestObj], hull[largestObj], false );
+    convexityDefects(contours[largestObj], hull[largestObj], defects[largestObj]);
+    //cout << defects[largestObj].size() <<endl;
 	Moments moment = moments(Mat(contours[largestObj]), true);
 	int centerX = moment.m10 / moment.m00;
 	int centerY = moment.m01 / moment.m00;
 	Point centerPoint(centerX, centerY);
 	centerP = centerPoint;
-	Point printPoint(centerX, centerY - 10);
+	Point printPoint(centerX, centerY + 15);
 	circle(dest, centerPoint, 8, Scalar(255, 0, 0), CV_FILLED);
 	//put the BoundingBox in the contour region
 	rectangle(dest, boundRect, Scalar(0, 0, 255), 2, 8, 0);
-
+	int rectHeight = boundRect.height;
+	int rectWidth = boundRect.width;
+	int maxXpoint = boundRect.x + boundRect.width;
+	int maxYpoint = boundRect.y + boundRect.height;
 	//print the center point position in the CoG(center of Grativity)
 	//putText(dest, integerToString(temp1) + "," + integerToString(temp2), printPoint, 1, 1, Scalar(0, 255, 0), 1, 8, false);
 
@@ -131,14 +133,14 @@ void trackHand(Mat src, Mat &dest) {
 		//int count = 0;
 		//bool flag = false;
 		for (int j = 0; j < countHullPoint; j++) {
-			if (centerP.y >= convexHullPoint[j].y && centerP.y > convexHullPoint[pos].y) {
+			if (centerP.y >= convexHullPoint[j].y && centerP.y >= convexHullPoint[pos].y) {
 				//count++;
 				int dist = (centerP.x - convexHullPoint[j].x)^ 2 + (centerP.y - convexHullPoint[j].y) ^ 2;
-				if ( dist > maxdist && abs(convexHullPoint[pos].x - convexHullPoint[j].x) < 5 ){
+				if ( dist > maxdist && abs(convexHullPoint[pos].x - convexHullPoint[j].x) < 9){
 					maxdist = dist;
 					pos = j;
 				}
-				else if( abs(convexHullPoint[pos].x - convexHullPoint[j].x) >= 9){
+				else if( abs(convexHullPoint[pos].x - convexHullPoint[j].x) >= 9  ){
 					fingerPoint.push_back(convexHullPoint[pos]);
 					cv::line(dest,centerP, convexHullPoint[pos],Scalar(0, 255, 0), 3, CV_AA, 0);
 					circle(dest, convexHullPoint[pos], 8, Scalar(255, 0, 0), CV_FILLED);
@@ -147,8 +149,51 @@ void trackHand(Mat src, Mat &dest) {
 			}
 		}
 
-		putText(dest, integerToString(fingerPoint.size()), printPoint, 1, 5, Scalar(0, 255, 0), 1, 8, false);
+		//**************************************************
+
+//		for( int d = 0; d < defects[largestObj].size(); d++){
+//			int temp = defects[largestObj][d][2];
+//			if ( centerP.y >= contours[largestObj][temp].y){
+//				int dist = (centerP.x - contours[largestObj][temp].x)^ 2 + (centerP.y - contours[largestObj][temp].y) ^ 2;
+//				if ( dist > 10 ){
+//					defectPoint[largestObj].push_back(contours[largestObj][temp]);
+//					circle(dest, defectPoint[largestObj][d], 8, Scalar(0, 255, 0), CV_FILLED);
+//				}
+//
+//			}
+//
+//		}
+
+		//**************************************************
+
+
+
+		int countFinger = fingerPoint.size();
+		int angle;
+		for ( int x = 0; x < countFinger; x++){
+			angle = angle + abs (angleToCenter(fingerPoint[x], centerP) );
+		}
+		doAction( angle, countFinger );
+		//cout << angle << endl;
+		putText(dest, integerToString(countFinger), printPoint, 1, 5, Scalar(0, 255, 0), 1, 8, false);
 	}
+}
+}
+
+
+void doAction(int totalAngleOfFinger, int fingerSize){
+	if( totalAngleOfFinger>= 94 && totalAngleOfFinger <= 100 && (fingerSize == 2  ))
+		cout << "Go Back Page" << endl;
+	else if( totalAngleOfFinger >= 200 && totalAngleOfFinger <= 250 && fingerSize == 5)
+		cout << "Maximum the Page" << endl;
+	else if( totalAngleOfFinger >= 200 && totalAngleOfFinger <= 250 && fingerSize == 4)
+		cout << "minimum the Page" << endl;
+	else if( totalAngleOfFinger == 0 )
+		cout <<  endl;
+	else if( totalAngleOfFinger >= 120 && totalAngleOfFinger <= 135 &&  (fingerSize == 2 ))
+		cout << "Reload the Page" << endl;
+	else
+		cout <<  endl;
 }
 
 int main() {
@@ -173,12 +218,16 @@ int main() {
 
 		//using the HSV minimum and maximum value to find the threshold value of the frame
 		//we can use these values to detect the hand skin color
-		cv::inRange(hsvFrame, Scalar(0, 0, 195), Scalar(256, 256, 256),threshold1);
-		cv::inRange(hsvFrame, Scalar(195, 0, 195), Scalar(256, 256, 256),threshold2);
+//		cv::inRange(hsvFrame, Scalar(0, 0, 195), Scalar(256, 256, 256),threshold1);
+//		cv::inRange(hsvFrame, Scalar(195, 0, 195), Scalar(256, 256, 256),threshold2);
+
+		//testing in the blue glove
+		cv::inRange(hsvFrame, Scalar(58, 33, 154), Scalar(132, 256, 256),threshold1);
+		cv::inRange(hsvFrame, Scalar(154, 33, 154), Scalar(256, 256, 256),threshold2);
 		cv::bitwise_or(threshold1, threshold2, thresholdFrame);
 
 		//blur image to remove basic imperfections
-		medianBlur(thresholdFrame, thresholdFrame, 3);
+		medianBlur(thresholdFrame, thresholdFrame, 5);
 
 		//do the morphological image processing
 		//closing the frame
