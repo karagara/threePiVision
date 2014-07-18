@@ -1,197 +1,198 @@
-////============================================================================
-//// Name        : machineVision.cpp
-//// Author      : Yan Liu and Colten Normore
-//// Version     : 0.0.1
-//// Copyright   : Share everywhere
-//// Description : A (theoretically) simple program to count fingers
-////============================================================================
-//
-//#include <opencv2/highgui/highgui.hpp>
-//#include <opencv2/imgproc/imgproc.hpp>
-//#include <cmath>
-//#include <string>
-//#include <iostream>
-//using namespace cv;
-//using namespace std;
-//
-//const int Frame_Width = 640;
-//const int Frame_Height = 480;
-//#define PI 3.14159265
-//
-//bool R1(int R, int G, int B);
-//void getSkin(Mat const &src, Mat &dest);
-//void getContours(Mat const &bwFrame, Mat &contourFrame, vector<vector<Point> > &contours);
-//void filterSmallContours(vector<vector<Point> > const &contours, vector<vector<Point> > &largeContours, int maxArea);
-//void takeDerivative(vector<int> const &samples, vector<int> &dsamples, int &fingerCount);
-//void getSamples(Mat const &closedFrame, vector<int> &samples, int sampleDistance, int com_x, int com_y);
-//
-//int main() {
-//	VideoCapture stream1;
-//	//default the capture frame size to the certain size
-//	stream1.set(CV_CAP_PROP_FRAME_WIDTH, Frame_Width);
-//	stream1.set(CV_CAP_PROP_FRAME_HEIGHT, Frame_Height);
-//	stream1.open(0);
-//
-//	if (!stream1.isOpened()) {
-//		cout << "cannot open camera";
-//	}
-//
-//	//unconditional loop
-//	while (true) {
-//		//initialization of various frames
-//		Mat cameraFrame, skinFrame, blurFrame, closedFrame, bwFrame, contourFrame;
-//		vector<vector<Point> > contours, largeContours;
-//
-//		//get image from stream
-//		stream1.read(cameraFrame);
-//
-//		//blur image to remove basic imperfections
-//	    medianBlur(cameraFrame, blurFrame, 7);
-//
-//		//find skin
-//		getSkin(blurFrame, skinFrame);
-//
-//		//Closing operation
-//		Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, Size(7, 7), Point(3,3));
-//		cv::morphologyEx(skinFrame, closedFrame, MORPH_CLOSE, element);
-//
-//		//find contours
-//		cv::cvtColor(closedFrame, bwFrame, CV_RGB2GRAY);
-//		contourFrame=cameraFrame.clone();
-//		getContours(bwFrame, contourFrame, contours);
-//
-//		//filter out small contours
-//		filterSmallContours(contours, largeContours, 2000);
-//
-//		//get bounding box and moments
-//		cv::Rect bBox;
-//		cv::Moments moment;
-//		vector<int> samples(360);
-//		if (largeContours.size() > 0){
-//			bBox = cv::boundingRect(largeContours[0]);
-//			cv::rectangle(contourFrame,bBox,Scalar(0, 255, 0));
-//			moment = cv::moments(largeContours[0]);
-//			int com_x = moment.m10 / moment.m00;
-//			int com_y = moment.m01 / moment.m00;
-//
-//
-//			//Create samples at a set ratio away from COM in each direction
-//			int sampleDistance = (bBox.y-com_y)*.90;
-//			cv::circle(contourFrame, Point(com_x, com_y), abs(sampleDistance), Scalar(255, 0, 0), 2);
-//
-//			getSamples(closedFrame,samples, sampleDistance, com_x, com_y);
-//		}
-//
-//		//take derivative of signal
-//		vector<int> dsamples(359);
-//		int fingerCount = -1;
-//		takeDerivative(samples, dsamples, fingerCount);
-//
-//		//display number of fingers detected
-//		std::string s;
-//		std::stringstream out;
-//		out << fingerCount;
-//		s = out.str();
-//		std::string fingerString = "There are: " + s +" finger(s)";
-//		cv::putText(contourFrame, fingerString ,Point(35, 35), 1, 1, Scalar(255, 0, 0), 2);
-//
-//
-//	    //setup outputs
-//	    namdedWindow("closed");
-//	    namedWindow("contours");
-//
-//		//show image
-//		imshow("closed", closedFrame);
-//		imshow("contours", contourFrame);
-//
-//		if (waitKey(10) >= 0) break;
-//	}
-//	return 0;
-//}
-//
-//void getSamples(Mat const &closedFrame, vector<int> &samples, int sampleDistance, int com_x, int com_y){
-//	for (int i=0; i < 360 ; i++){
-//		int sample_x = sampleDistance * cos(i*PI/180);
-//		sample_x += com_x;
-//		int sample_y = sampleDistance * sin(i*PI/180);
-//		sample_y += com_y;
-//
-//		if(sample_x < 0) sample_x = 0;
-//		else if(sample_x > Frame_Width) sample_x = Frame_Width-1;
-//
-//		if(sample_y < 0) sample_y = 0;
-//		else if(sample_y > Frame_Height) sample_y = Frame_Height-1;
-//
-//		if (closedFrame.ptr<Vec3b>(sample_y)[sample_x] == Vec3b::all(255)){
-//			samples[i] = 1;
-//		}else{
-//			samples[i] = 0;
-//		}
-//	}
-//
-//}
-//
-//void takeDerivative(vector<int> const &samples, vector<int> &dsamples, int &fingerCount){
-//	for(int i = 1; i < 360; i++){
-//		dsamples[i] = samples[i] - samples[i-1];
-//		if (dsamples[i] < 0){
-//			dsamples[i] = 0;
-//		}
-//		if (dsamples[i] == 1){
-//			fingerCount++;
-//		}
-//	}
-//}
-//
-//
-//void getContours( Mat const &bwFrame, Mat &contourFrame, vector<vector<Point> > &contours ){
-//	vector<Vec4i> hierarchy;
-//	cv::findContours(bwFrame,contours,hierarchy,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
-//	cv::drawContours(contourFrame,contours,-1,Scalar(0, 0, 255), 3, 8, hierarchy);
-//}
-//
-//void filterSmallContours(vector<vector<Point> > const &contours, vector<vector<Point> > &largeContours, int maxArea){
-//	int size = contours.size();
-//	for (int i=0; i < size; i++){
-//		//if there is a large contour, add it to the vector of large contours
-//		if (cv::contourArea(contours[i]) > maxArea){
-//			largeContours.push_back(contours[i]);
-//		}
-//	}
-//}
-//
-//void getSkin(Mat const &src, Mat &dest) {
-//    // allocate the result matrix
-//    dest = src.clone();
-//
-//    Vec3b cwhite = Vec3b::all(255);
-//    Vec3b cblack = Vec3b::all(0);
-//    for(int i = 0; i < src.rows; i++) {
-//        for(int j = 0; j < src.cols; j++) {
-//            Vec3b pix_bgr = src.ptr<Vec3b>(i)[j];
-//            int B = pix_bgr.val[0];
-//            int G = pix_bgr.val[1];
-//            int R = pix_bgr.val[2];
-//            // apply rgb rule
-//            bool a = R1(R,G,B);
-//
-//            //fill based on rule
-//            if(a)
-//            	dest.ptr<Vec3b>(i)[j] = cwhite;
-//            else
-//            	dest.ptr<Vec3b>(i)[j] = cblack;
-//        }
-//    }
-//}
-//
-//bool R1(int R, int G, int B){
-//
-//	double rgRatio = (double)R/(double)G;
-//	bool isSkin = false;
-//	if ( rgRatio > 1.05 && rgRatio < 4.0){
-//		isSkin = true;
-//	}
-//	return isSkin;
-//
-//}
-//
+/*
+ * handDetection.cpp
+ *
+ *  Created on: July 16th, 2014
+ *      Author: Yan and Colten
+ */
+
+#include <opencv\cv.h>
+#include <opencv\highgui.h>
+#include <iostream>
+#include <math.h>
+using namespace cv;
+using namespace std;
+
+const int FRAME_WIDTH = 640;
+const int FRAME_HEIGHT = 480;
+#define PI 3.14159265
+
+//declare the functions
+void filterSmallContours(vector<vector<Point> > const &contours,
+		vector<vector<Point> > &largeContours, int maxArea);
+void morphologicalImgProc(Mat &frame);
+string integerToString(int num);
+float angleBetween(const Point &v1, const Point &v2);
+
+//calculate the angle between two points
+//need to be renamed variables!!!!!!
+float angleBetween(const Point &v1, const Point &v2) {
+	float len1 = sqrt(v1.x * v1.x + v1.y * v1.y);
+	float len2 = sqrt(v2.x * v2.x + v2.y * v2.y);
+
+	float dot = v1.x * v2.x + v1.y * v2.y;
+
+	float a = dot / (len1 * len2);
+
+	if (a >= 1.0)
+		return 0.0;
+	else if (a <= -1.0)
+		return PI;
+	else
+		return acos(a); // 0..PI
+}
+
+//the function that convert the integer to string
+//return a string value
+string integerToString(int num) {
+	stringstream strings;
+	strings << num;
+	string s = strings.str();
+	return s;
+}
+
+//filter the small object that appears in the frame for certain area
+void filterSmallContours(vector<vector<Point> > const &contours,
+		vector<vector<Point> > &largeContours, int maxArea) {
+	int size = contours.size();
+	for (int i = 0; i < size; i++) {
+		//if there is a large contour, add it to the vector of large contours
+		if (cv::contourArea(contours[i]) > maxArea) {
+			largeContours.push_back(contours[i]);
+		}
+	}
+}
+
+void morphologicalImgProc(Mat &frame) {
+	Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, Size(9, 9), Point(5, 5));
+	Mat element1 = cv::getStructuringElement(cv::MORPH_ELLIPSE, Size(7, 7), Point(5, 5));
+	cv::dilate(frame, frame, element);
+	cv::erode(frame, frame, element);
+	cv::morphologyEx(frame, frame, MORPH_OPEN, element);
+	cv::morphologyEx(frame, frame, MORPH_CLOSE, element);
+}
+
+void trackHand(Mat src, Mat &dest) {
+	//variables init
+	//bool handFound;
+	Rect boundRect;
+	int largestObj = 0;
+	vector<vector<Point> > contours; //store all the contours
+	vector<vector<Point> > contoursSet(contours.size());//store large contours
+	vector<Vec4i> hierarchy;
+	vector<Point> convexHullPoint;
+	vector<Point> fingerPoint;
+	vector<int> convexPoint;
+	Point centerP;
+	int numObjects = 0;
+	bool flag = false;
+	double area = 0;
+	double maxArea = 0;
+	bool handFound = false;
+
+	findContours(src, contours, hierarchy, CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
+	//findContours(src, contours, hierarchy, CV_RETR_TREE, CV_CLOCKWISE,Point(0, 0));
+	numObjects = hierarchy.size();
+	for (unsigned int i = 0; i < contours.size(); i++) {
+		Mat tempContour = Mat(contours[i]);
+		area = contourArea(tempContour);
+		if (area > maxArea) {
+			maxArea = area;
+			largestObj = i;
+			handFound = true;
+		}
+	}
+	boundRect = boundingRect(contours[largestObj]);
+	//filterSmallContours(contours, contoursSet, maxArea);
+
+	//draw the boundary of the object
+
+	drawContours(dest, contours, largestObj, Scalar(0, 0, 255), 3, 8,hierarchy);
+
+	convexHull(contours[largestObj], convexHullPoint, true, true);
+	//approxPolyDP( Mat(contoursSet[largestObj]), contoursSet[largestObj], 3, true );
+	Moments moment = moments(Mat(contours[largestObj]), true);
+	int centerX = moment.m10 / moment.m00;
+	int centerY = moment.m01 / moment.m00;
+	Point centerPoint(centerX, centerY);
+	centerP = centerPoint;
+	Point printPoint(centerX, centerY - 10);
+	circle(dest, centerPoint, 8, Scalar(255, 0, 0), CV_FILLED);
+	//put the BoundingBox in the contour region
+	rectangle(dest, boundRect, Scalar(0, 0, 255), 2, 8, 0);
+
+	//print the center point position in the CoG(center of Grativity)
+	//putText(dest, integerToString(temp1) + "," + integerToString(temp2), printPoint, 1, 1, Scalar(0, 255, 0), 1, 8, false);
+
+	//working without show the figure tips
+	if (handFound) {
+		int countHullPoint = convexHullPoint.size();
+		int maxdist = 0;
+		int pos = 0;
+		//int count = 0;
+		//bool flag = false;
+		for (int j = 0; j < countHullPoint; j++) {
+			if (centerP.y >= convexHullPoint[j].y && centerP.y > convexHullPoint[pos].y) {
+				//count++;
+				int dist = (centerP.x - convexHullPoint[j].x)^ 2 + (centerP.y - convexHullPoint[j].y) ^ 2;
+				if ( dist > maxdist && abs(convexHullPoint[pos].x - convexHullPoint[j].x) < 5 ){
+					maxdist = dist;
+					pos = j;
+				}
+				else if( abs(convexHullPoint[pos].x - convexHullPoint[j].x) >= 9){
+					fingerPoint.push_back(convexHullPoint[pos]);
+					cv::line(dest,centerP, convexHullPoint[pos],Scalar(0, 255, 0), 3, CV_AA, 0);
+					circle(dest, convexHullPoint[pos], 8, Scalar(255, 0, 0), CV_FILLED);
+					pos = j;
+				}
+			}
+		}
+
+		putText(dest, integerToString(fingerPoint.size()), printPoint, 1, 5, Scalar(0, 255, 0), 1, 8, false);
+	}
+}
+
+int main() {
+	VideoCapture stream1;
+	//default the capture frame size to the certain size
+	stream1.set(CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
+	stream1.set(CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
+	stream1.open(0);
+	if (!stream1.isOpened()) {
+		cout << "cannot open camera";
+	}
+	while (true) {
+		//determine that if the hand is detected or not
+		//initialization of various frames
+		Mat cameraFrame, blurFrame, threshold1, threshold2, closedFrame,
+				hsvFrame, colorObjectFrame, thresholdFrame;
+		//get image from stream
+		stream1.read(cameraFrame);
+
+		//switch the RGB to HSV space
+		cv::cvtColor(cameraFrame, hsvFrame, CV_BGR2HSV);
+
+		//using the HSV minimum and maximum value to find the threshold value of the frame
+		//we can use these values to detect the hand skin color
+		cv::inRange(hsvFrame, Scalar(0, 0, 195), Scalar(256, 256, 256),threshold1);
+		cv::inRange(hsvFrame, Scalar(195, 0, 195), Scalar(256, 256, 256),threshold2);
+		cv::bitwise_or(threshold1, threshold2, thresholdFrame);
+
+		//blur image to remove basic imperfections
+		medianBlur(thresholdFrame, thresholdFrame, 3);
+
+		//do the morphological image processing
+		//closing the frame
+		morphologicalImgProc(thresholdFrame);
+
+		//track the hand, put the bounding box around the hand
+		//calculate the center point of the hand
+		trackHand(thresholdFrame, cameraFrame);
+
+		namedWindow("Hand_Detection");
+		imshow("Hand_Detection", cameraFrame);
+		if (waitKey(10) >= 0)
+			break;
+	}
+	return 0;
+
+}
