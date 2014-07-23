@@ -67,7 +67,7 @@ void trackHand(Mat src, Mat &dest) {
 	//variables init
 	//bool handFound;
 	Rect boundRect;
-	int largestObj = 0;
+	int largestObj;
 	vector<vector<Point> > contours; //store all the contours
 	vector<vector<Point> > contoursSet(contours.size());//store large contours
 	vector<Vec4i> hierarchy;
@@ -93,10 +93,11 @@ void trackHand(Mat src, Mat &dest) {
 		if (area > maxArea) {
 			maxArea = area;
 			largestObj = i;
-			handFound = true;
+			//handFound = true;
 		}
 	}
-	if( maxArea > 5000){
+	if( maxArea > 4000){
+	handFound = true;
 	boundRect = boundingRect(contours[largestObj]);
 	//filterSmallContours(contours, contoursSet, maxArea);
 
@@ -115,6 +116,7 @@ void trackHand(Mat src, Mat &dest) {
 	Point centerPoint(centerX, centerY);
 	centerP = centerPoint;
 	Point printPoint(centerX, centerY + 15);
+	Point printPoint1(boundRect.x, boundRect.y);
 	circle(dest, centerPoint, 8, Scalar(255, 0, 0), CV_FILLED);
 	//put the BoundingBox in the contour region
 	rectangle(dest, boundRect, Scalar(0, 0, 255), 2, 8, 0);
@@ -130,17 +132,20 @@ void trackHand(Mat src, Mat &dest) {
 		int countHullPoint = convexHullPoint.size();
 		int maxdist = 0;
 		int pos = 0;
-		//int count = 0;
-		//bool flag = false;
-		for (int j = 0; j < countHullPoint; j++) {
+	    int tempDist;
+		bool flag;
+		for (int j = 1; j < countHullPoint; j++) {
+			pos = j;
 			if (centerP.y >= convexHullPoint[j].y && centerP.y >= convexHullPoint[pos].y) {
-				//count++;
+				pos = j;
 				int dist = (centerP.x - convexHullPoint[j].x)^ 2 + (centerP.y - convexHullPoint[j].y) ^ 2;
-				if ( dist > maxdist && abs(convexHullPoint[pos].x - convexHullPoint[j].x) < 9){
-					maxdist = dist;
-					pos = j;
+				if (  abs(convexHullPoint[j-1].x - convexHullPoint[j].x) < 12){
+					if ( dist > maxdist){
+						maxdist = dist;
+						pos = j;
+					}
 				}
-				else if( abs(convexHullPoint[pos].x - convexHullPoint[j].x) >= 9  ){
+				else if( j == 0 || abs(convexHullPoint[j-1].x - convexHullPoint[j].x) >= 12 ){
 					fingerPoint.push_back(convexHullPoint[pos]);
 					cv::line(dest,centerP, convexHullPoint[pos],Scalar(0, 255, 0), 3, CV_AA, 0);
 					circle(dest, convexHullPoint[pos], 8, Scalar(255, 0, 0), CV_FILLED);
@@ -150,32 +155,32 @@ void trackHand(Mat src, Mat &dest) {
 		}
 
 		//**************************************************
+		//circle(dest, defectPoint[largestObj][d], 8, Scalar(0, 255, 0), CV_FILLED);
+
 
 //		for( int d = 0; d < defects[largestObj].size(); d++){
 //			int temp = defects[largestObj][d][2];
-//			if ( centerP.y >= contours[largestObj][temp].y){
-//				int dist = (centerP.x - contours[largestObj][temp].x)^ 2 + (centerP.y - contours[largestObj][temp].y) ^ 2;
-//				if ( dist > 10 ){
-//					defectPoint[largestObj].push_back(contours[largestObj][temp]);
-//					circle(dest, defectPoint[largestObj][d], 8, Scalar(0, 255, 0), CV_FILLED);
-//				}
-//
+//			if ( contours[largestObj][temp].y <= centerP.y){
+//				defectPoint[largestObj].push_back(contours[largestObj][temp]);
+//				circle(dest, defectPoint[largestObj][d], 8, Scalar(0, 255, 0), CV_FILLED);
 //			}
 //
 //		}
-
 		//**************************************************
-
 
 
 		int countFinger = fingerPoint.size();
 		int angle;
-		for ( int x = 0; x < countFinger; x++){
-			angle = angle + abs (angleToCenter(fingerPoint[x], centerP) );
+		if( countFinger <= 5){
+			for ( int x = 0; x < countFinger; x++){
+				angle = angle + abs (angleToCenter(fingerPoint[x], centerP) );
+			}
 		}
+
 		doAction( angle, countFinger );
 		//cout << angle << endl;
-		putText(dest, integerToString(countFinger), printPoint, 1, 5, Scalar(0, 255, 0), 1, 8, false);
+		putText(dest, integerToString(countFinger), printPoint, 1, 5, Scalar(0, 255, 0), 1, 5, false);
+
 	}
 }
 }
@@ -192,12 +197,15 @@ void doAction(int totalAngleOfFinger, int fingerSize){
 		cout <<  endl;
 	else if( totalAngleOfFinger >= 120 && totalAngleOfFinger <= 135 &&  (fingerSize == 2 ))
 		cout << "Reload the Page" << endl;
+	else if( totalAngleOfFinger >= 160 && totalAngleOfFinger <= 200 &&  (fingerSize == 3 ) )
+		cout << "Closing the Page" << endl;
 	else
 		cout <<  endl;
 }
 
 int main() {
 	VideoCapture stream1;
+
 	//default the capture frame size to the certain size
 	stream1.set(CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
 	stream1.set(CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
@@ -222,9 +230,9 @@ int main() {
 //		cv::inRange(hsvFrame, Scalar(195, 0, 195), Scalar(256, 256, 256),threshold2);
 
 		//testing in the blue glove
-		cv::inRange(hsvFrame, Scalar(58, 33, 154), Scalar(132, 256, 256),threshold1);
-		cv::inRange(hsvFrame, Scalar(154, 33, 154), Scalar(256, 256, 256),threshold2);
-		cv::bitwise_or(threshold1, threshold2, thresholdFrame);
+		cv::inRange(hsvFrame, Scalar(58, 58, 95), Scalar(133, 154, 256),thresholdFrame);
+		//cv::inRange(hsvFrame, Scalar(0, 58, 95), Scalar(0, 154, 256),threshold2);
+		//cv::bitwise_or(threshold1, threshold2, thresholdFrame);
 
 		//blur image to remove basic imperfections
 		medianBlur(thresholdFrame, thresholdFrame, 5);
@@ -232,7 +240,7 @@ int main() {
 		//do the morphological image processing
 		//closing the frame
 		morphologicalImgProc(thresholdFrame);
-
+		//imshow( "test", thresholdFrame);
 		//track the hand, put the bounding box around the hand
 		//calculate the center point of the hand
 		trackHand(thresholdFrame, cameraFrame);
@@ -241,6 +249,7 @@ int main() {
 		imshow("Hand_Detection", cameraFrame);
 		if (waitKey(10) >= 0)
 			break;
+		cameraFrame.release();
 	}
 	return 0;
 
