@@ -23,7 +23,6 @@ string integerToString(int num);
 int angleToCenter(const Point &v1, const Point &v2);
 void doAction(int totalAngleOfFinger, int fingerSize);
 
-
 //calculate the angle between two points
 int angleToCenter(const Point &finger, const Point &center) {
 	float y_angle = center.y - finger.y; //center = 1;
@@ -42,18 +41,8 @@ string integerToString(int num) {
 	return s;
 }
 
-//filter the small object that appears in the frame for certain area
-//void filterSmallContours(vector<vector<Point> > const &contours,
-//		vector<vector<Point> > &largeContours, int maxArea) {
-//	int size = contours.size();
-//	for (int i = 0; i < size; i++) {
-//		//if there is a large contour, add it to the vector of large contours
-//		if (cv::contourArea(contours[i]) > maxArea) {
-//			largeContours.push_back(contours[i]);
-//		}
-//	}
-//}
-
+//morphological Image processing
+//Erosion -> dilation -> closing the frame ensure to get the better performance
 void morphologicalImgProc(Mat &frame) {
 	Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, Size(9, 9), Point(5, 5));
 	Mat element1 = cv::getStructuringElement(cv::MORPH_ELLIPSE, Size(7, 7), Point(5, 5));
@@ -185,22 +174,27 @@ void trackHand(Mat src, Mat &dest) {
 }
 }
 
-
+//action performed based on the number of fingers and the total angle
+//1.  5 fingers && total angle: 270 - 285
+//2.  4 fingers && total angle: 240 - 255
+//3.  3 fingers && total angle: 190 - 210
+//4.  2 fingers && total angle: 120 - 130
+//5.  1 finger && total angle:  65 - 75
 void doAction(int totalAngleOfFinger, int fingerSize){
-	if( totalAngleOfFinger>= 94 && totalAngleOfFinger <= 100 && (fingerSize == 2  ))
-		cout << "Go Back Page" << endl;
-	else if( totalAngleOfFinger >= 200 && totalAngleOfFinger <= 250 && fingerSize == 5)
+	if( totalAngleOfFinger>= 270 && totalAngleOfFinger <= 285 && (fingerSize == 5  ))
 		cout << "Maximum the Page" << endl;
-	else if( totalAngleOfFinger >= 200 && totalAngleOfFinger <= 250 && fingerSize == 4)
-		cout << "minimum the Page" << endl;
-	else if( totalAngleOfFinger == 0 )
-		cout <<  endl;
-	else if( totalAngleOfFinger >= 120 && totalAngleOfFinger <= 135 &&  (fingerSize == 2 ))
+	else if( totalAngleOfFinger >= 240 && totalAngleOfFinger <= 255 && fingerSize == 4)
+		cout << "Minimum the Page" << endl;
+	else if( totalAngleOfFinger >= 190 && totalAngleOfFinger <= 210 && fingerSize == 3)
+		cout << "Go back the page" << endl;
+	else if( totalAngleOfFinger >= 120 && totalAngleOfFinger <= 130 &&  (fingerSize == 2 ))
 		cout << "Reload the Page" << endl;
-	else if( totalAngleOfFinger >= 160 && totalAngleOfFinger <= 200 &&  (fingerSize == 3 ) )
+	else if( totalAngleOfFinger >= 65 && totalAngleOfFinger <= 75 &&  (fingerSize == 1 ) )
 		cout << "Closing the Page" << endl;
+	else if( totalAngleOfFinger == 0 )
+		cout << endl;
 	else
-		cout <<  endl;
+		cout << endl;
 }
 
 int main() {
@@ -230,6 +224,7 @@ int main() {
 //		cv::inRange(hsvFrame, Scalar(195, 0, 195), Scalar(256, 256, 256),threshold2);
 
 		//testing in the blue glove
+		//need to adjust before the live demo
 		cv::inRange(hsvFrame, Scalar(58, 58, 95), Scalar(133, 154, 256),thresholdFrame);
 		//cv::inRange(hsvFrame, Scalar(0, 58, 95), Scalar(0, 154, 256),threshold2);
 		//cv::bitwise_or(threshold1, threshold2, thresholdFrame);
@@ -250,6 +245,7 @@ int main() {
 		if (waitKey(10) >= 0)
 			break;
 		cameraFrame.release();
+
 	}
 	return 0;
 
