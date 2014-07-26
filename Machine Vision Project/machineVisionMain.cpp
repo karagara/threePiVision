@@ -1,29 +1,33 @@
-/*
- * machineVisionMain.cpp
+/*********************************************************************
+ *  machineVisionMain.cpp
+ *  Machine Vision Project - Hand Gesture control web browser
  *
- *  Created on: July 16th, 2014
- *      Author: Yan and Colten
- */
+ *  Created on: June 16th, 2014
+ *  Submitted by:  Yan Liu
+ *                 Colten Normore
+ *  Version:       1.0.0
+ *  This project can be Shared Everywhere
+ *********************************************************************/
 
 #include <opencv\cv.h>
 #include <opencv\highgui.h>
-#include "opencv2/core/core.hpp"
-#include <opencv2/video/background_segm.hpp>
 #include <iostream>
 #include <math.h>
+
 using namespace cv;
 using namespace std;
-
+//initialize the frame size
 const int FRAME_WIDTH = 640;
 const int FRAME_HEIGHT = 480;
 #define PI 3.14159265
 
-//declare the functions
-//void filterSmallContours(vector<vector<Point> > const &contours, vector<vector<Point> > &largeContours, int maxArea);
+//declare the local functions
 void morphologicalImgProc(Mat &frame);
 string integerToString(int num);
 int angleToCenter(const Point &v1, const Point &v2);
-void doAction(int totalAngleOfFinger, int fingerSize);
+String doAction(int totalAngleOfFinger, int fingerSize);
+void sendResult(String msg);
+
 
 //calculate the angle between two points
 int angleToCenter(const Point &finger, const Point &center) {
@@ -34,8 +38,7 @@ int angleToCenter(const Point &finger, const Point &center) {
 	return angleFinger;
 }
 
-//the function that convert the integer to string
-//return a string value
+//convert the integer to string
 string integerToString(int num) {
 	stringstream strings;
 	strings << num;
@@ -54,29 +57,23 @@ void morphologicalImgProc(Mat &frame) {
 	cv::morphologyEx(frame, frame, MORPH_CLOSE, element);
 }
 
+//the important function to track the hand, the algorithm is described in the report
 void trackHand(Mat src, Mat &dest) {
-	//variables init
-	//bool handFound;
+	//initialization local variables
 	Rect boundRect;
 	int largestObj;
 	vector<vector<Point> > contours; //store all the contours
 	vector<vector<Point> > contoursSet(contours.size());//store large contours
 	vector<Vec4i> hierarchy;
 	vector<Point> convexHullPoint;
-
 	vector<Point> fingerPoint;
 	Point centerP;
 	int numObjects = 0;
-	bool flag = false;
 	double area = 0;
 	double maxArea = 0;
 	bool handFound = false;
-
+	//find all the contours in the threshold Frame
 	findContours(src, contours, hierarchy, CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
-	vector<vector<int> > hull( contours.size());
-	vector<vector<Vec4i> > defects ( contours.size());
-	vector<vector<Point> > defectPoint( contours.size());
-
 	numObjects = hierarchy.size();
 	for (unsigned int i = 0; i < contours.size(); i++) {
 		Mat tempContour = Mat(contours[i]);
@@ -84,23 +81,16 @@ void trackHand(Mat src, Mat &dest) {
 		if (area > maxArea) {
 			maxArea = area;
 			largestObj = i;
-			//handFound = true;
 		}
 	}
 	if( maxArea > 4000){
 	handFound = true;
 	boundRect = boundingRect(contours[largestObj]);
-	//filterSmallContours(contours, contoursSet, maxArea);
-
 	//draw the boundary of the object
-
 	drawContours(dest, contours, largestObj, Scalar(0, 0, 255), 3, 8,hierarchy);
-
+	//find the convex points for the largest object which is hand
 	convexHull(contours[largestObj], convexHullPoint, true, true);
-	//approxPolyDP( Mat(contoursSet[largestObj]), contoursSet[largestObj], 3, true );
-	convexHull(contours[largestObj], hull[largestObj], false );
-    convexityDefects(contours[largestObj], hull[largestObj], defects[largestObj]);
-    //cout << defects[largestObj].size() <<endl;
+	//use moment method to find the center point
 	Moments moment = moments(Mat(contours[largestObj]), true);
 	int centerX = moment.m10 / moment.m00;
 	int centerY = moment.m01 / moment.m00;
@@ -111,21 +101,10 @@ void trackHand(Mat src, Mat &dest) {
 	circle(dest, centerPoint, 8, Scalar(255, 0, 0), CV_FILLED);
 	//put the BoundingBox in the contour region
 	rectangle(dest, boundRect, Scalar(0, 0, 255), 2, 8, 0);
-	int rectHeight = boundRect.height;
-	int rectWidth = boundRect.width;
-	int maxXpoint = boundRect.x + boundRect.width;
-	int maxYpoint = boundRect.y + boundRect.height;
-	//print the center point position in the CoG(center of Grativity)
-	//putText(dest, integerToString(temp1) + "," + integerToString(temp2), printPoint, 1, 1, Scalar(0, 255, 0), 1, 8, false);
-
-	//working without show the figure tips
 	if (handFound) {
-
 		int countHullPoint = convexHullPoint.size();
 		int maxdist = 0;
 		int pos = 0;
-	    int tempDist;
-		bool flag;
 		for (int j = 1; j < countHullPoint; j++) {
 			pos = j;
 			if (centerP.y >= convexHullPoint[j].y && centerP.y >= convexHullPoint[pos].y) {
@@ -146,20 +125,26 @@ void trackHand(Mat src, Mat &dest) {
 			}
 		}
 
+		//get the size the fingers, and calculate the total angle of these fingers
 		int countFinger = fingerPoint.size();
-		int angle;
+		int angle = 0;
+		String resultMsg;
 		if( countFinger <= 5){
 			for ( int x = 0; x < countFinger; x++){
 				angle = angle + abs (angleToCenter(fingerPoint[x], centerP) );
 			}
 		}
-
-		doAction( angle, countFinger );
 		//cout << angle << endl;
+		resultMsg = doAction( angle, countFinger);
+		sendResult(resultMsg);
 		putText(dest, integerToString(countFinger), printPoint, 1, 5, Scalar(0, 255, 0), 1, 5, false);
-
 	}
 }
+}
+
+////send out the result signal
+void sendResult(String msg){
+	cout << "Command: " << msg << endl;
 }
 
 //action performed based on the number of fingers and the total angle
@@ -168,34 +153,33 @@ void trackHand(Mat src, Mat &dest) {
 //3.  3 fingers && total angle: 190 - 210
 //4.  2 fingers && total angle: 120 - 130
 //5.  1 finger && total angle:  65 - 75
-void doAction(int totalAngleOfFinger, int fingerSize){
+String doAction(const int totalAngleOfFinger, const int fingerSize){
+	String result = "";
 	if( totalAngleOfFinger>= 270 && totalAngleOfFinger <= 285 && (fingerSize == 5  ))
-		cout << "Maximum the Page" << endl;
+		result = "Maximum the Page";
 	else if( totalAngleOfFinger >= 240 && totalAngleOfFinger <= 255 && fingerSize == 4)
-		cout << "Minimum the Page" << endl;
+		result = "Minimum the Page";
 	else if( totalAngleOfFinger >= 190 && totalAngleOfFinger <= 210 && fingerSize == 3)
-		cout << "Go back the page" << endl;
+		result = "Go back the page";
 	else if( totalAngleOfFinger >= 120 && totalAngleOfFinger <= 130 &&  (fingerSize == 2 ))
-		cout << "Reload the Page" << endl;
+		result = "Reload the Page";
 	else if( totalAngleOfFinger >= 65 && totalAngleOfFinger <= 75 &&  (fingerSize == 1 ) )
-		cout << "Closing the Page" << endl;
-	else if( totalAngleOfFinger == 0 )
-		cout << endl;
-	else
-		cout << endl;
+		result = "Closing the Page";
+	return result;
 }
 
 
 int main() {
-	//initialization of various frames
-	Mat cameraFrame, blurFrame, threshold1, threshold2, closedFrame,
-			hsvFrame, colorObjectFrame, thresholdFrame;
+	//initialization of local frames
+	Mat cameraFrame, blurFrame, threshold1, threshold2, closedFrame, hsvFrame, colorObjectFrame, thresholdFrame;
 	VideoCapture stream1;
 
-	//default the capture frame size to the certain size
+	//default the capture frame size to the certain size & open the camera
 	stream1.set(CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
 	stream1.set(CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
 	stream1.open(0);
+
+	//report the error if the camera not connected properly
 	if (!stream1.isOpened()) {
 		cout << "cannot open camera";
 	}
@@ -209,10 +193,10 @@ int main() {
 
 		//testing in the blue glove on hand
 		//need to adjust before the live demo
-		//cv::inRange(hsvFrame, Scalar(58, 58, 95), Scalar(133, 154, 256),thresholdFrame);
+		cv::inRange(hsvFrame, Scalar(58, 58, 95), Scalar(133, 154, 256),thresholdFrame);
 
 		//Tracking actual hand in restricted background
-		cv::inRange(hsvFrame, Scalar(96, 23, 123), Scalar(256, 100, 256),thresholdFrame);
+		//cv::inRange(hsvFrame, Scalar(96, 23, 123), Scalar(256, 100, 256),thresholdFrame);
 
 		//blur image to remove basic imperfections
 		medianBlur(thresholdFrame, thresholdFrame, 5);
@@ -225,12 +209,13 @@ int main() {
 		//calculate the center point of the hand
 		trackHand(thresholdFrame, cameraFrame);
 
-		namedWindow("Hand_Detection");
-		imshow("Hand_Detection", cameraFrame);
+		namedWindow("Hand_Gesture_Detection");
+		imshow("Hand_Gesture_Detection", cameraFrame);
+
 		if (waitKey(10) >= 0)
 			break;
+		//release the memory
 		cameraFrame.release();
-
 	}
 	return 0;
 
