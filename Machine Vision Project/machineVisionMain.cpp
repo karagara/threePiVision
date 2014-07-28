@@ -9,6 +9,9 @@
  *  This project can be Shared Everywhere
  *********************************************************************/
 
+#include <opencv2/video/background_segm.hpp>
+
+
 #include <opencv\cv.h>
 #include <opencv\highgui.h>
 #include <iostream>
@@ -91,6 +94,7 @@ void trackHand(Mat src, Mat &dest) {
 	drawContours(dest, contours, largestObj, Scalar(0, 0, 255), 3, 8,hierarchy);
 	//find the convex points for the largest object which is hand
 	convexHull(contours[largestObj], convexHullPoint, true, true);
+	approxPolyDP( Mat(contours[largestObj]), contours[largestObj], 3, true );
 	//use moment method to find the center point
 	Moments moment = moments(Mat(contours[largestObj]), true);
 	int centerX = moment.m10 / moment.m00;
@@ -103,8 +107,8 @@ void trackHand(Mat src, Mat &dest) {
 	//put the BoundingBox in the contour region
 	rectangle(dest, boundRect, Scalar(0, 0, 255), 2, 8, 0);
 	boundingBoxHeight = boundRect.height;
-	if( boundingBoxHeight <= 200)
-		handFound = false;
+	//if( boundingBoxHeight <= 200)
+	//	handFound = false;
 	if (handFound) {
 		int countHullPoint = convexHullPoint.size();
 		int maxdist = 0;
@@ -140,7 +144,7 @@ void trackHand(Mat src, Mat &dest) {
 		}
 		//cout << angle << endl;
 		resultMsg = doAction( angle, countFinger);
-		//sendResult(resultMsg);
+		sendResult(resultMsg);
 		putText(dest, integerToString(countFinger), printPoint, 1, 5, Scalar(0, 255, 0), 1, 5, false);
 	}
 }
@@ -178,12 +182,18 @@ int main() {
 	//initialization of local frames
 	Mat cameraFrame, blurFrame, threshold1, threshold2, closedFrame, hsvFrame, colorObjectFrame, thresholdFrame;
 	VideoCapture stream1;
+	Mat grayscale;
+	Mat fgMaskMOG;
+	Mat foreground;
+	Mat background;
+	Ptr <BackgroundSubtractor> pMOG;
+	pMOG = new BackgroundSubtractorMOG();
 
 	//default the capture frame size to the certain size & open the camera
 	stream1.set(CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
 	stream1.set(CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
 	stream1.open(0);
-
+	background = imread("background.jpg");
 	//report the error if the camera not connected properly
 	if (!stream1.isOpened()) {
 		cout << "cannot open camera";
@@ -192,19 +202,25 @@ int main() {
 	while (true) {
 		//get image from stream
 		stream1.read(cameraFrame);
+		pMOG->operator ()(cameraFrame, foreground);
+		medianBlur(foreground, foreground, 3);
+		cv::cvtColor(foreground, foreground, CV_GRAY2BGR);
 
-		//switch the RGB to HSV space
-		cv::cvtColor(cameraFrame, hsvFrame, CV_BGR2HSV);
+		//switch the RGB to HSV space, combined with background substraction
+		cv::cvtColor(foreground, hsvFrame, CV_BGR2HSV);
+
+		//cv::cvtColor(cameraFrame, hsvFrame, CV_BGR2HSV);
 
 		//testing in the blue glove on hand
 		//need to adjust before the live demo
-		cv::inRange(hsvFrame, Scalar(58, 58, 95), Scalar(133, 154, 256),thresholdFrame);
+		//cv::inRange(hsvFrame, Scalar(58, 58, 95), Scalar(133, 154, 256),thresholdFrame);
 
 		//Tracking actual hand in restricted background
+		cv::inRange(hsvFrame, Scalar(0, 0, 255), Scalar(256, 256, 256),thresholdFrame);
 		//cv::inRange(hsvFrame, Scalar(96, 23, 123), Scalar(256, 100, 256),thresholdFrame);
 
 		//blur image to remove basic imperfections
-		medianBlur(thresholdFrame, thresholdFrame, 5);
+		medianBlur(thresholdFrame, thresholdFrame, 3);
 
 		//do the morphological image processing
 		//closing the frame

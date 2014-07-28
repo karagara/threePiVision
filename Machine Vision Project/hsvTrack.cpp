@@ -10,6 +10,8 @@
 //
 //#include <opencv\highgui.h>
 //#include <opencv\cv.h>
+//#include <opencv2/video/background_segm.hpp>
+//
 //using namespace std;
 //using namespace cv;
 //
@@ -56,6 +58,15 @@
 //
 //int main(int argc, char* argv[]) {
 //	//initialize the variables
+//	Mat cameraFrame, blurFrame, threshold1, threshold2, closedFrame, hsvFrame, colorObjectFrame, thresholdFrame;
+//	VideoCapture stream1;
+//	Mat grayscale;
+//	Mat fgMaskMOG;
+//	Mat foreground;
+//	Mat background;
+//	Ptr <BackgroundSubtractor> pMOG;
+//	pMOG = new BackgroundSubtractorMOG();
+//
 //	Mat cameraOrig;
 //	Mat cameraHSV;
 //	Mat cameraThreshold;
@@ -71,16 +82,17 @@
 //
 //	while (1) {
 //		vcapture.read(cameraOrig);
-//
+//		pMOG->operator ()(cameraOrig, foreground);
 //		//remove the salt and pepper noise
-//		cv::medianBlur(cameraOrig, cameraOrig, 3);
+//		cv::medianBlur(foreground, foreground, 3);
 //		//cv::GaussianBlur(cameraOrig, cameraOrig, Size(3, 3), 0);
-//
+//		cv::cvtColor(foreground, foreground, CV_GRAY2BGR);
 //		//change the color to HSV space
-//		cv::cvtColor(cameraOrig, cameraHSV, cv::COLOR_BGR2HSV);
-//
+//		cv::cvtColor(foreground, cameraHSV, cv::COLOR_BGR2HSV);
+//		cv::imshow("Camera hsv 1st", cameraHSV);
 //		//get the threshold frame using the minimum and maximum HSV values
 //		cv::inRange(cameraHSV, Scalar(Hue_Min, Sat_Min, Val_Min), Scalar(Hue_Max, Sat_Max, Val_Max), cameraThreshold);
+//		cv::imshow("Camera Threshold 1st", cameraThreshold);
 //
 //		//using the Morphological Image processing to process the image, remove noise
 //		morphologicalImgProc(cameraThreshold);
