@@ -62,6 +62,7 @@ void trackHand(Mat src, Mat &dest) {
 	//initialization local variables
 	Rect boundRect;
 	int largestObj;
+	int boundingBoxHeight = 0;
 	vector<vector<Point> > contours; //store all the contours
 	vector<vector<Point> > contoursSet(contours.size());//store large contours
 	vector<Vec4i> hierarchy;
@@ -101,6 +102,9 @@ void trackHand(Mat src, Mat &dest) {
 	circle(dest, centerPoint, 8, Scalar(255, 0, 0), CV_FILLED);
 	//put the BoundingBox in the contour region
 	rectangle(dest, boundRect, Scalar(0, 0, 255), 2, 8, 0);
+	boundingBoxHeight = boundRect.height;
+	if( boundingBoxHeight <= 200)
+		handFound = false;
 	if (handFound) {
 		int countHullPoint = convexHullPoint.size();
 		int maxdist = 0;
@@ -136,7 +140,7 @@ void trackHand(Mat src, Mat &dest) {
 		}
 		//cout << angle << endl;
 		resultMsg = doAction( angle, countFinger);
-		sendResult(resultMsg);
+		//sendResult(resultMsg);
 		putText(dest, integerToString(countFinger), printPoint, 1, 5, Scalar(0, 255, 0), 1, 5, false);
 	}
 }
@@ -167,6 +171,7 @@ String doAction(const int totalAngleOfFinger, const int fingerSize){
 		result = "Closing the Page";
 	return result;
 }
+
 
 
 int main() {
